@@ -1,0 +1,13 @@
+{
+  "name": "Meu Mês - Controle Financeiro",
+  "short_name": "Meu Mês",
+  "description": "Controle simples dos seus ganhos e gastos mensais.",
+  "start_url": "./Index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f7fb",
+  "theme_color": "#16a34a",
+  "orientation": "portrait",
+  "lang": "pt-BR",
+  "icons": []
+}

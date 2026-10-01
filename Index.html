@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="theme-color"
+        content="#16a34a">
+
+    <meta
+        name="mobile-web-app-capable"
+        content="yes">
+
+    <title>Meu Mês</title>
+
+    <!-- Manifesto PWA -->
+    <link
+        rel="manifest"
+        href="./manifest.json">
+
+    <!-- CSS principal -->
+    <link
+        rel="stylesheet"
+        href="./style.css">
+
+</head>
+
+<body>
+
+    <!-- CABEÇALHO -->
+
+    <header class="topo">
+
+        <h1>💰 Meu Mês</h1>
+
+        <p>
+            Controle simples dos seus gastos
+        </p>
+
+    </header>
+
+
+    <!-- SELETOR DE MÊS -->
+
+    <div class="seletor-mes">
+
+        <button
+            type="button"
+            onclick="mesAnterior()">
+
+            ◀
+
+        </button>
+
+
+        <input
+            type="month"
+            id="mesSelecionado"
+            onchange="alterarMes()">
+
+
+        <button
+            type="button"
+            onclick="proximoMes()">
+
+            ▶
+
+        </button>
+
+    </div>
+
+
+    <!-- CONTEÚDO PRINCIPAL -->
+
+    <main class="container">
+
+
+        <!-- RESUMO FINANCEIRO -->
+
+        <section class="resumo">
+
+
+            <!-- SALDO -->
+
+            <div class="saldo">
+
+                <span>
+                    Disponível
+                </span>
+
+                <strong id="saldo">
+                    R$ 0,00
+                </strong>
+
+            </div>
+
+
+            <!-- GANHOS E DESPESAS -->
+
+            <div class="resumo-grid">
+
+
+                <div class="card ganho">
+
+                    <span>
+                        Ganhos
+                    </span>
+
+                    <strong id="totalGanhos">
+                        R$ 0,00
+                    </strong>
+
+                </div>
+
+
+                <div class="card despesa">
+
+                    <span>
+                        Despesas
+                    </span>
+
+                    <strong id="totalDespesas">
+                        R$ 0,00
+                    </strong>
+
+                </div>
+
+
+            </div>
+
+
+            <!-- LIMITE DIÁRIO -->
+
+            <div class="limite">
+
+                <span>
+                    Você pode gastar aproximadamente
+                </span>
+
+                <strong id="limiteDiario">
+                    R$ 0,00
+                </strong>
+
+                <small>
+                    por dia
+                </small>
+
+            </div>
+
+
+        </section>
+
+
+
+        <!-- FORMULÁRIO DE LANÇAMENTO -->
+
+        <section class="formulario">
+
+
+            <h2>
+                Novo lançamento
+            </h2>
+
+
+            <!-- TIPO -->
+
+            <div class="tipo">
+
+
+                <button
+                    type="button"
+                    id="btnDespesa"
+                    class="tipo-btn ativo"
+                    onclick="selecionarTipo('despesa')">
+
+                    💸 Despesa
+
+                </button>
+
+
+                <button
+                    type="button"
+                    id="btnGanho"
+                    class="tipo-btn"
+                    onclick="selecionarTipo('ganho')">
+
+                    💰 Ganho
+
+                </button>
+
+
+            </div>
+
+
+            <!-- FORMULÁRIO -->
+
+            <form id="formLancamento">
+
+
+                <!-- DESCRIÇÃO -->
+
+                <label for="descricao">
+                    Descrição
+                </label>
+
+
+                <input
+                    type="text"
+                    id="descricao"
+                    placeholder="Ex.: Mercado"
+                    required>
+
+
+                <!-- VALOR -->
+
+                <label for="valor">
+                    Valor
+                </label>
+
+
+                <input
+                    type="number"
+                    id="valor"
+                    placeholder="0,00"
+                    step="0.01"
+                    min="0"
+                    required>
+
+
+                <!-- CATEGORIA -->
+
+                <label for="categoria">
+                    Categoria
+                </label>
+
+
+                <select id="categoria">
+
+
+                    <option value="Alimentação">
+                        🍔 Alimentação
+                    </option>
+
+
+                    <option value="Casa">
+                        🏠 Casa
+                    </option>
+
+
+                    <option value="Transporte">
+                        🚗 Transporte
+                    </option>
+
+
+                    <option value="Saúde">
+                        💊 Saúde
+                    </option>
+
+
+                    <option value="Lazer">
+                        🎮 Lazer
+                    </option>
+
+
+                    <option value="Educação">
+                        📚 Educação
+                    </option>
+
+
+                    <option value="Salário">
+                        💰 Salário
+                    </option>
+
+
+                    <option value="Outros">
+                        📦 Outros
+                    </option>
+
+
+                </select>
+
+
+                <!-- DATA -->
+
+                <label for="data">
+                    Data
+                </label>
+
+
+                <input
+                    type="date"
+                    id="data"
+                    required>
+
+
+                <!-- BOTÃO SALVAR -->
+
+                <button
+                    type="submit"
+                    class="salvar">
+
+                    + Salvar lançamento
+
+                </button>
+
+
+            </form>
+
+
+        </section>
+
+
+
+        <!-- LISTA DE LANÇAMENTOS -->
+
+        <section class="lancamentos">
+
+
+            <h2>
+                Lançamentos
+            </h2>
+
+
+            <div id="listaLancamentos">
+
+
+                <p class="vazio">
+                    Nenhum lançamento neste mês.
+                </p>
+
+
+            </div>
+
+
+        </section>
+
+
+    </main>
+
+
+
+    <!-- JAVASCRIPT PRINCIPAL -->
+
+    <script src="./app.js"></script>
+
+
+
+    <!-- SERVICE WORKER / PWA -->
+
+    <script>
+
+        if ("serviceWorker" in navigator) {
+
+            window.addEventListener("load", function () {
+
+                navigator.serviceWorker
+                    .register("./sw.js")
+                    .then(function () {
+
+                        console.log(
+                            "Service Worker registrado."
+                        );
+
+                    })
+                    .catch(function (erro) {
+
+                        console.log(
+                            "Erro ao registrar Service Worker:",
+                            erro
+                        );
+
+                    });
+
+            });
+
+        }
+
+    </script>
+
+
+</body>
+
+</html>
