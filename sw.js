@@ -1,11 +1,13 @@
-const CACHE_NAME = "meu-mes-v1";
+const CACHE_NAME = "meu-mes-v10";
 
 const ARQUIVOS = [
     "./",
     "./index.html",
     "./style.css",
     "./app.js",
-    "./manifest.json"
+    "./manifest.json",
+    "./icon-192.png",
+    "./icon-512.png"
 ];
 
 self.addEventListener("install", function (event) {
@@ -44,6 +46,10 @@ self.addEventListener("activate", function (event) {
 
 
 self.addEventListener("fetch", function (event) {
+
+    if (event.request.method !== "GET") {
+        return;
+    }
 
     event.respondWith(
 

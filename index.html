@@ -135,25 +135,6 @@
             </div>
 
 
-            <!-- LIMITE DIÁRIO -->
-
-            <div class="limite">
-
-                <span>
-                    Você pode gastar aproximadamente
-                </span>
-
-                <strong id="limiteDiario">
-                    R$ 0,00
-                </strong>
-
-                <small>
-                    por dia
-                </small>
-
-            </div>
-
-
         </section>
 
 
@@ -272,6 +253,9 @@
                         📚 Educação
                     </option>
 
+                    <option value="Cartão de crédito">
+                        💳 Cartão de crédito
+                    </option>
 
                     <option value="Salário">
                         💰 Salário
@@ -321,8 +305,6 @@
 
         </section>
 
-
-
         <!-- LISTA DE LANÇAMENTOS -->
 
         <section class="lancamentos">
@@ -349,6 +331,32 @@
 
     </main>
 
+    <footer class="rodape-uso">
+        <div class="rodape-conteudo">
+            <section class="backup" aria-labelledby="tituloBackup">
+                <h2 id="tituloBackup">Backup dos dados</h2>
+                <p>
+                    Salve uma cópia fora do navegador para proteger seus lançamentos.
+                </p>
+                <div class="backup-acoes">
+                    <button type="button" id="btnCriarBackup">
+                        Criar/vincular arquivo JSON
+                    </button>
+                    <button type="button" id="btnRestaurarBackup">
+                        Restaurar arquivo JSON
+                    </button>
+                    <button type="button" id="btnReconectarBackup" hidden>
+                        Permitir acesso ao arquivo
+                    </button>
+                </div>
+                <p id="statusBackup" class="status-backup" role="status" aria-live="polite">
+                    Salvamento automático no dispositivo ativo.
+                </p>
+            </section>
+
+            <p class="creditos-rodape">Desenvolvido por edilsondelima</p>
+        </div>
+    </footer>
 
 
     <!-- JAVASCRIPT PRINCIPAL -->

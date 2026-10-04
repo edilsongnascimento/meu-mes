@@ -221,6 +221,103 @@ select {
     text-align: center;
     padding: 20px 0;
 }
+
+.rodape-uso {
+    margin-top: 28px;
+    padding: 26px 15px 22px;
+    border-top: 1px solid #dbe3ee;
+    background: #eaf0f7;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.rodape-conteudo {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.backup {
+    padding: 18px;
+    border: 1px solid #dfe6ef;
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 3px 10px rgba(31, 41, 55, 0.06);
+}
+
+.backup h2 {
+    margin-bottom: 6px;
+    color: #1f2937;
+    font-size: 18px;
+}
+
+.backup > p {
+    color: #6b7280;
+    line-height: 1.5;
+}
+
+.backup-acoes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+    margin-top: 14px;
+}
+
+.backup-acoes button {
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid #d1d9e4;
+    border-radius: 9px;
+    background: #f8fafc;
+    color: #334155;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.backup-acoes button:hover {
+    background: #eef2f7;
+}
+
+.backup-acoes #btnCriarBackup {
+    border-color: #15803d;
+    background: #16a34a;
+    color: #ffffff;
+}
+
+.backup-acoes #btnCriarBackup:hover {
+    background: #15803d;
+}
+
+.backup-acoes button:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.35);
+    outline-offset: 2px;
+}
+
+.status-backup {
+    margin-top: 12px;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.status-backup.erro {
+    color: #b91c1c;
+}
+
+.creditos-rodape {
+    margin-top: 8px;
+    color: #64748b;
+    text-align: center;
+    font-size: 12px;
+}
+
+@media (max-width: 420px) {
+    .backup-acoes {
+        grid-template-columns: 1fr;
+    }
+}
+
 .seletor-mes {
     display: flex;
     align-items: center;

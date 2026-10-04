@@ -11,20 +11,215 @@ let mesSelecionado = obterMesAtual();
 // Lista de lançamentos
 let lancamentos = [];
 
+const NOME_BANCO_DADOS = "meuMes";
+const VERSAO_BANCO_DADOS = 1;
+const CHAVE_ESTADO = "principal";
+let bancoDadosPromise;
+let arquivoBackup = null;
+let persistenciaEmFila = Promise.resolve();
+
 
 // ======================================================
 // CARREGAR DADOS
 // ======================================================
 
-try {
-    if (typeof localStorage !== "undefined") {
-        lancamentos =
-            JSON.parse(
-                localStorage.getItem("meuMesLancamentos")
-            ) || [];
+function abrirBancoDados() {
+    if (!("indexedDB" in window)) {
+        return Promise.reject(
+            new Error("Este navegador não oferece armazenamento IndexedDB.")
+        );
     }
-} catch (erro) {
-    console.log("Armazenamento local indisponível:", erro);
+
+    if (!bancoDadosPromise) {
+        bancoDadosPromise = new Promise(function (resolve, reject) {
+            const solicitacao = indexedDB.open(
+                NOME_BANCO_DADOS,
+                VERSAO_BANCO_DADOS
+            );
+
+            solicitacao.onupgradeneeded = function () {
+                const banco = solicitacao.result;
+
+                if (!banco.objectStoreNames.contains("estado")) {
+                    banco.createObjectStore("estado", { keyPath: "id" });
+                }
+            };
+
+            solicitacao.onsuccess = function () {
+                resolve(solicitacao.result);
+            };
+
+            solicitacao.onerror = function () {
+                reject(solicitacao.error);
+            };
+        });
+    }
+
+    return bancoDadosPromise;
+}
+
+async function lerEstadoPersistido() {
+    const banco = await abrirBancoDados();
+
+    return new Promise(function (resolve, reject) {
+        const transacao = banco.transaction("estado", "readonly");
+        const solicitacao = transacao
+            .objectStore("estado")
+            .get(CHAVE_ESTADO);
+
+        solicitacao.onsuccess = function () {
+            resolve(solicitacao.result || null);
+        };
+
+        solicitacao.onerror = function () {
+            reject(solicitacao.error);
+        };
+    });
+}
+
+async function gravarEstadoPersistido(estado) {
+    const banco = await abrirBancoDados();
+
+    return new Promise(function (resolve, reject) {
+        const transacao = banco.transaction("estado", "readwrite");
+        transacao.objectStore("estado").put(estado);
+        transacao.oncomplete = resolve;
+        transacao.onerror = function () {
+            reject(transacao.error);
+        };
+        transacao.onabort = function () {
+            reject(transacao.error || new Error("Não foi possível salvar os dados."));
+        };
+    });
+}
+
+function lerLancamentosLegados() {
+    if (typeof localStorage === "undefined") {
+        return [];
+    }
+
+    const dados = JSON.parse(localStorage.getItem("meuMesLancamentos"));
+    return Array.isArray(dados) ? dados : [];
+}
+
+function atualizarStatusBackup(mensagem, erro) {
+    const status = document.getElementById("statusBackup");
+
+    if (status) {
+        status.textContent = mensagem;
+        status.classList.toggle("erro", Boolean(erro));
+    }
+}
+
+function validarLancamentos(dados) {
+    if (!Array.isArray(dados)) {
+        throw new Error("O arquivo não contém uma lista de lançamentos válida.");
+    }
+
+    return dados.map(function (item) {
+        if (
+            !item ||
+            (typeof item.id !== "number" && typeof item.id !== "string") ||
+            typeof item.descricao !== "string" ||
+            !["ganho", "despesa"].includes(item.tipo) ||
+            !Number.isFinite(Number(item.valor)) ||
+            Number(item.valor) <= 0 ||
+            typeof item.data !== "string" ||
+            !/^\d{4}-\d{2}-\d{2}$/.test(item.data)
+        ) {
+            throw new Error("O arquivo contém um lançamento inválido.");
+        }
+
+        return {
+            id: item.id,
+            tipo: item.tipo,
+            descricao: item.descricao,
+            valor: Number(item.valor),
+            categoria: String(item.categoria || "Outros"),
+            data: String(item.data)
+        };
+    });
+}
+
+function obterConteudoBackup() {
+    return JSON.stringify({
+        versao: 1,
+        atualizadoEm: new Date().toISOString(),
+        lancamentos: lancamentos
+    }, null, 2);
+}
+
+async function gravarArquivoBackup() {
+    if (!arquivoBackup) {
+        return false;
+    }
+
+    const permissao = await arquivoBackup.queryPermission({
+        mode: "readwrite"
+    });
+
+    if (permissao !== "granted") {
+        return false;
+    }
+
+    const gravador = await arquivoBackup.createWritable();
+    await gravador.write(obterConteudoBackup());
+    await gravador.close();
+    return true;
+}
+
+async function iniciarPersistencia() {
+    try {
+        const estado = await lerEstadoPersistido();
+
+        if (estado && Array.isArray(estado.lancamentos)) {
+            lancamentos = validarLancamentos(estado.lancamentos);
+            arquivoBackup = estado.arquivoBackup || null;
+            atualizarStatusBackup(
+                arquivoBackup
+                    ? "Dados salvos automaticamente neste dispositivo. Arquivo de backup vinculado."
+                    : "Salvamento automático neste dispositivo ativo. Crie um arquivo JSON para ter uma cópia externa."
+            );
+        } else {
+            lancamentos = lerLancamentosLegados();
+            atualizarStatusBackup(
+                "Dados antigos carregados. Serão protegidos no armazenamento do dispositivo."
+            );
+            salvarDados();
+        }
+
+        if (arquivoBackup && "queryPermission" in arquivoBackup) {
+            const permissao = await arquivoBackup.queryPermission({
+                mode: "readwrite"
+            });
+
+            if (permissao !== "granted") {
+                atualizarStatusBackup(
+                    "Backup automático pausado: permita novamente o acesso ao arquivo."
+                );
+                const botao = document.getElementById("btnReconectarBackup");
+                if (botao) {
+                    botao.hidden = false;
+                }
+            }
+        }
+    } catch (erro) {
+        try {
+            lancamentos = lerLancamentosLegados();
+        } catch (erroLocalStorage) {
+            console.error("Não foi possível ler os dados locais:", erroLocalStorage);
+            atualizarStatusBackup(
+                "Não foi possível carregar os dados salvos. Verifique as permissões do navegador.",
+                true
+            );
+        }
+
+        console.error("Não foi possível abrir o armazenamento persistente:", erro);
+        atualizarStatusBackup(
+            "Armazenamento local indisponível. Exporte um backup JSON para proteger seus dados.",
+            true
+        );
+    }
 }
 
 
@@ -32,7 +227,9 @@ try {
 // INICIALIZAÇÃO
 // ======================================================
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
+
+    await iniciarPersistencia();
 
     // Define o mês atual no seletor
     const campoMes = document.getElementById("mesSelecionado");
@@ -53,6 +250,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Atualiza a tela
     atualizarTela();
+
+    configurarBackup();
 });
 
 
@@ -220,22 +419,246 @@ if (formulario) {
 // ======================================================
 
 function salvarDados() {
-
+    let erroLocalStorage = null;
     try {
-
         if (typeof localStorage !== "undefined") {
-
             localStorage.setItem(
                 "meuMesLancamentos",
                 JSON.stringify(lancamentos)
             );
         }
-
     } catch (erro) {
+        erroLocalStorage = erro;
+    }
 
-        console.log(
-            "Não foi possível salvar os dados:",
-            erro
+    if (erroLocalStorage) {
+        console.error("Não foi possível salvar no armazenamento legado:", erroLocalStorage);
+    }
+
+    const estado = {
+        id: CHAVE_ESTADO,
+        lancamentos: lancamentos.map(function (item) {
+            return { ...item };
+        }),
+        arquivoBackup: arquivoBackup
+    };
+
+    persistenciaEmFila = persistenciaEmFila
+        .then(async function () {
+            await gravarEstadoPersistido(estado);
+
+            const arquivoSalvo = await gravarArquivoBackup();
+            const botaoReconectar =
+                document.getElementById("btnReconectarBackup");
+
+            if (arquivoSalvo) {
+                atualizarStatusBackup(
+                    "Dados salvos neste dispositivo e no arquivo JSON."
+                );
+                if (botaoReconectar) {
+                    botaoReconectar.hidden = true;
+                }
+            } else if (arquivoBackup) {
+                atualizarStatusBackup(
+                    "Dados salvos neste dispositivo. Permita acesso ao arquivo para atualizar o backup."
+                );
+                if (botaoReconectar) {
+                    botaoReconectar.hidden = false;
+                }
+            } else {
+                atualizarStatusBackup(
+                    "Dados salvos automaticamente neste dispositivo. Crie um arquivo JSON para ter uma cópia externa."
+                );
+            }
+        })
+        .catch(function (erro) {
+            console.error("Não foi possível salvar os dados persistentes:", erro);
+            const botaoReconectar =
+                document.getElementById("btnReconectarBackup");
+
+            if (arquivoBackup && botaoReconectar) {
+                botaoReconectar.hidden = false;
+            }
+            atualizarStatusBackup(
+                "Falha ao salvar os dados. Exporte um backup JSON e confira o espaço/permissões do navegador.",
+                true
+            );
+        });
+}
+
+function salvarArquivoParaDownload() {
+    const arquivo = new Blob([obterConteudoBackup()], {
+        type: "application/json"
+    });
+    const url = URL.createObjectURL(arquivo);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = "meu-mes-backup.json";
+    link.click();
+    URL.revokeObjectURL(url);
+    atualizarStatusBackup(
+        "Backup JSON baixado. Guarde o arquivo fora da pasta de downloads temporários."
+    );
+}
+
+async function criarOuVincularArquivoBackup() {
+    if (!("showSaveFilePicker" in window)) {
+        salvarArquivoParaDownload();
+        return;
+    }
+
+    try {
+        const novoArquivo = await window.showSaveFilePicker({
+            suggestedName: "meu-mes-backup.json",
+            types: [{
+                description: "Backup Meu Mês",
+                accept: { "application/json": [".json"] }
+            }]
+        });
+        const existente = await novoArquivo.getFile();
+
+        if (
+            existente.size > 0 &&
+            !confirm("Este arquivo já contém dados. Deseja substituí-los pelos lançamentos atuais?")
+        ) {
+            return;
+        }
+
+        arquivoBackup = novoArquivo;
+        const estado = {
+            id: CHAVE_ESTADO,
+            lancamentos: lancamentos.map(function (item) {
+                return { ...item };
+            }),
+            arquivoBackup: arquivoBackup
+        };
+
+        await gravarEstadoPersistido(estado);
+        const gravado = await gravarArquivoBackup();
+
+        if (!gravado) {
+            atualizarStatusBackup(
+                "O arquivo foi selecionado, mas o Chrome não concedeu permissão de gravação.",
+                true
+            );
+            document.getElementById("btnReconectarBackup").hidden = false;
+            return;
+        }
+
+        document.getElementById("btnReconectarBackup").hidden = true;
+        atualizarStatusBackup(
+            "Arquivo JSON vinculado. Os próximos lançamentos serão salvos nele automaticamente."
+        );
+    } catch (erro) {
+        if (erro.name !== "AbortError") {
+            console.error("Não foi possível criar o arquivo de backup:", erro);
+            atualizarStatusBackup(
+                "Não foi possível criar/vincular o arquivo de backup.",
+                true
+            );
+        }
+    }
+}
+
+async function restaurarArquivoBackup(arquivo, handle) {
+    try {
+        const conteudo = JSON.parse(await arquivo.text());
+        const dados = Array.isArray(conteudo)
+            ? conteudo
+            : conteudo.lancamentos;
+        const lancamentosRestaurados = validarLancamentos(dados);
+
+        if (!confirm("Restaurar este backup? Os lançamentos atuais serão substituídos.")) {
+            return;
+        }
+
+        lancamentos = lancamentosRestaurados;
+        arquivoBackup = handle || null;
+        salvarDados();
+        atualizarTela();
+    } catch (erro) {
+        console.error("Não foi possível restaurar o arquivo de backup:", erro);
+        atualizarStatusBackup(
+            erro instanceof SyntaxError
+                ? "O arquivo selecionado não contém um JSON válido."
+                : erro.message,
+            true
+        );
+    }
+}
+
+async function selecionarArquivoParaRestaurar() {
+    if ("showOpenFilePicker" in window) {
+        try {
+            const [handle] = await window.showOpenFilePicker({
+                multiple: false,
+                types: [{
+                    description: "Backup Meu Mês",
+                    accept: { "application/json": [".json"] }
+                }]
+            });
+            await restaurarArquivoBackup(await handle.getFile(), handle);
+        } catch (erro) {
+            if (erro.name !== "AbortError") {
+                console.error("Não foi possível abrir o arquivo de backup:", erro);
+                atualizarStatusBackup("Não foi possível abrir o arquivo de backup.", true);
+            }
+        }
+        return;
+    }
+
+    const seletor = document.createElement("input");
+    seletor.type = "file";
+    seletor.accept = ".json,application/json";
+    seletor.addEventListener("change", async function () {
+        if (seletor.files && seletor.files[0]) {
+            await restaurarArquivoBackup(seletor.files[0], null);
+        }
+    }, { once: true });
+    seletor.click();
+}
+
+async function reconectarArquivoBackup() {
+    if (!arquivoBackup) {
+        await criarOuVincularArquivoBackup();
+        return;
+    }
+
+    try {
+        const permissao = await arquivoBackup.requestPermission({
+            mode: "readwrite"
+        });
+
+        if (permissao !== "granted") {
+            atualizarStatusBackup(
+                "A permissão não foi concedida. Os dados continuam salvos neste dispositivo.",
+                true
+            );
+            return;
+        }
+
+        document.getElementById("btnReconectarBackup").hidden = true;
+        salvarDados();
+    } catch (erro) {
+        console.error("Não foi possível reconectar o arquivo de backup:", erro);
+        atualizarStatusBackup("Não foi possível acessar o arquivo de backup.", true);
+    }
+}
+
+function configurarBackup() {
+    const botaoCriar = document.getElementById("btnCriarBackup");
+    const botaoRestaurar = document.getElementById("btnRestaurarBackup");
+    const botaoReconectar = document.getElementById("btnReconectarBackup");
+
+    botaoCriar.addEventListener("click", criarOuVincularArquivoBackup);
+    botaoRestaurar.addEventListener("click", selecionarArquivoParaRestaurar);
+    botaoReconectar.addEventListener("click", reconectarArquivoBackup);
+
+    if (!("showSaveFilePicker" in window)) {
+        botaoCriar.textContent = "Baixar arquivo de backup JSON";
+        atualizarStatusBackup(
+            "Salvamento automático no dispositivo ativo. Neste navegador, backups em arquivo precisam ser baixados e restaurados manualmente."
         );
     }
 }
@@ -411,108 +834,6 @@ function atualizarResumo() {
     }
 
 
-    // Calcula limite diário
-    calcularLimiteDiario(saldo);
-}
-
-
-// ======================================================
-// LIMITE DIÁRIO
-// ======================================================
-
-function calcularLimiteDiario(saldo) {
-
-    const elemento =
-        document.getElementById("limiteDiario");
-
-
-    if (!elemento) {
-        return;
-    }
-
-
-    const hoje = new Date();
-
-    const anoSelecionado =
-        parseInt(mesSelecionado.substring(0, 4));
-
-    const mesSelecionadoNumero =
-        parseInt(mesSelecionado.substring(5, 7));
-
-
-    const anoAtual =
-        hoje.getFullYear();
-
-    const mesAtual =
-        hoje.getMonth() + 1;
-
-
-    let diasRestantes;
-
-
-    // Se for o mês atual
-    if (
-        anoSelecionado === anoAtual &&
-        mesSelecionadoNumero === mesAtual
-    ) {
-
-        const ultimoDia =
-            new Date(
-                anoAtual,
-                mesAtual,
-                0
-            ).getDate();
-
-
-        const diaAtual =
-            hoje.getDate();
-
-
-        diasRestantes =
-            ultimoDia - diaAtual + 1;
-
-    }
-
-    // Se for um mês futuro
-    else if (
-        new Date(
-            anoSelecionado,
-            mesSelecionadoNumero - 1,
-            1
-        ) > hoje
-    ) {
-
-        const ultimoDia =
-            new Date(
-                anoSelecionado,
-                mesSelecionadoNumero,
-                0
-            ).getDate();
-
-
-        diasRestantes = ultimoDia;
-
-    }
-
-    // Mês passado
-    else {
-
-        diasRestantes = 1;
-    }
-
-
-    let limiteDiario = 0;
-
-
-    if (saldo > 0 && diasRestantes > 0) {
-
-        limiteDiario =
-            saldo / diasRestantes;
-    }
-
-
-    elemento.textContent =
-        formatarMoeda(limiteDiario);
 }
 
 
