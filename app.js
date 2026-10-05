@@ -245,6 +245,9 @@ document.addEventListener("DOMContentLoaded", async function () {
         campoData.value = dataAtual();
     }
 
+    configurarCalendarios();
+    atualizarControlesCalendario();
+
     // Define despesa como tipo inicial
     selecionarTipo("despesa");
 
@@ -267,6 +270,192 @@ function dataAtual() {
     const dia = String(hoje.getDate()).padStart(2, "0");
 
     return `${ano}-${mes}-${dia}`;
+}
+
+let mesCalendarioData = obterMesAtual();
+let anoSeletorMes = Number(mesSelecionado.split("-")[0]);
+
+function formatarMes(mes) {
+    const partes = mes.split("-").map(Number);
+    const nome = new Intl.DateTimeFormat("pt-BR", {
+        month: "long",
+        year: "numeric"
+    }).format(new Date(partes[0], partes[1] - 1, 1));
+
+    return nome.charAt(0).toLocaleUpperCase("pt-BR") + nome.slice(1);
+}
+
+function atualizarControlesCalendario() {
+    const botaoMes = document.getElementById("mesSelecionado");
+    const campoData = document.getElementById("data");
+    const botaoData = document.getElementById("dataVisivel");
+
+    if (botaoMes) {
+        botaoMes.textContent = formatarMes(mesSelecionado);
+    }
+
+    if (campoData && botaoData) {
+        const partes = campoData.value.split("-").map(Number);
+        botaoData.textContent = partes.length === 3
+            ? `${String(partes[2]).padStart(2, "0")}/${String(partes[1]).padStart(2, "0")}/${partes[0]}`
+            : "Escolher data";
+    }
+
+    renderizarOpcoesMes();
+    renderizarCalendarioData();
+}
+
+function configurarCalendarios() {
+    document.getElementById("anoAnterior").addEventListener("click", function () {
+        anoSeletorMes -= 1;
+        renderizarOpcoesMes();
+    });
+    document.getElementById("anoProximo").addEventListener("click", function () {
+        anoSeletorMes += 1;
+        renderizarOpcoesMes();
+    });
+    document.getElementById("diaMesAnterior").addEventListener("click", function () {
+        alterarMesCalendarioData(-1);
+    });
+    document.getElementById("diaMesProximo").addEventListener("click", function () {
+        alterarMesCalendarioData(1);
+    });
+    document.addEventListener("keydown", function (evento) {
+        if (evento.key === "Escape") {
+            fecharCalendarios();
+        }
+    });
+}
+
+function renderizarOpcoesMes() {
+    const ano = document.getElementById("anoCalendario");
+    const opcoes = document.getElementById("opcoesMes");
+
+    if (!ano || !opcoes) {
+        return;
+    }
+
+    ano.textContent = anoSeletorMes;
+    opcoes.replaceChildren();
+
+    for (let numeroMes = 0; numeroMes < 12; numeroMes += 1) {
+        const nome = new Intl.DateTimeFormat("pt-BR", {
+            month: "long"
+        }).format(new Date(anoSeletorMes, numeroMes, 1));
+        const botao = document.createElement("button");
+        const valorMes = `${anoSeletorMes}-${String(numeroMes + 1).padStart(2, "0")}`;
+
+        botao.type = "button";
+        botao.textContent = nome.charAt(0).toLocaleUpperCase("pt-BR") + nome.slice(1);
+        botao.classList.toggle("selecionado", valorMes === mesSelecionado);
+        botao.setAttribute("aria-pressed", String(valorMes === mesSelecionado));
+        botao.addEventListener("click", function () {
+            mesSelecionado = valorMes;
+            fecharCalendarios();
+            atualizarControlesCalendario();
+            atualizarTela();
+        });
+        opcoes.appendChild(botao);
+    }
+}
+
+function renderizarCalendarioData() {
+    const titulo = document.getElementById("tituloCalendarioData");
+    const dias = document.getElementById("diasCalendario");
+
+    if (!titulo || !dias) {
+        return;
+    }
+
+    const partes = mesCalendarioData.split("-").map(Number);
+    const ano = partes[0];
+    const mes = partes[1];
+    titulo.textContent = formatarMes(mesCalendarioData);
+    dias.replaceChildren();
+
+    const deslocamento = (new Date(ano, mes - 1, 1).getDay() + 6) % 7;
+    const quantidadeDias = new Date(ano, mes, 0).getDate();
+    const dataSelecionada = document.getElementById("data").value;
+    const hoje = dataAtual();
+
+    for (let vazio = 0; vazio < deslocamento; vazio += 1) {
+        const espaco = document.createElement("span");
+        espaco.setAttribute("aria-hidden", "true");
+        dias.appendChild(espaco);
+    }
+
+    for (let numeroDia = 1; numeroDia <= quantidadeDias; numeroDia += 1) {
+        const valorData = `${ano}-${String(mes).padStart(2, "0")}-${String(numeroDia).padStart(2, "0")}`;
+        const botao = document.createElement("button");
+
+        botao.type = "button";
+        botao.textContent = numeroDia;
+        botao.setAttribute("aria-label", `${numeroDia} de ${formatarMes(mesCalendarioData)}`);
+        botao.classList.toggle("selecionado", valorData === dataSelecionada);
+        botao.classList.toggle("hoje", valorData === hoje);
+        botao.setAttribute("aria-pressed", String(valorData === dataSelecionada));
+        botao.addEventListener("click", function () {
+            document.getElementById("data").value = valorData;
+            atualizarControlesCalendario();
+            fecharCalendarios();
+        });
+        dias.appendChild(botao);
+    }
+}
+
+function alterarMesCalendarioData(diferenca) {
+    const partes = mesCalendarioData.split("-").map(Number);
+    const novaData = new Date(partes[0], partes[1] - 1 + diferenca, 1);
+
+    mesCalendarioData = `${novaData.getFullYear()}-${String(novaData.getMonth() + 1).padStart(2, "0")}`;
+    renderizarCalendarioData();
+}
+
+function alternarSeletorMes() {
+    const painel = document.getElementById("seletorMesCalendario");
+    const abrir = painel.hidden;
+
+    fecharCalendarios();
+    painel.hidden = !abrir;
+    document.getElementById("mesSelecionado").setAttribute("aria-expanded", String(abrir));
+    if (abrir) {
+        anoSeletorMes = Number(mesSelecionado.split("-")[0]);
+        renderizarOpcoesMes();
+    }
+}
+
+function alternarCalendarioData() {
+    const painel = document.getElementById("calendarioData");
+    const abrir = painel.hidden;
+
+    fecharCalendarios();
+    painel.hidden = !abrir;
+    document.getElementById("dataVisivel").setAttribute("aria-expanded", String(abrir));
+    if (abrir) {
+        const data = document.getElementById("data").value || dataAtual();
+        mesCalendarioData = data.substring(0, 7);
+        renderizarCalendarioData();
+    }
+}
+
+function fecharCalendarios() {
+    const seletorMes = document.getElementById("seletorMesCalendario");
+    const calendarioData = document.getElementById("calendarioData");
+    const botaoMes = document.getElementById("mesSelecionado");
+    const botaoData = document.getElementById("dataVisivel");
+
+    if (seletorMes) {
+        seletorMes.hidden = true;
+    }
+    if (calendarioData) {
+        calendarioData.hidden = true;
+    }
+    if (botaoMes) {
+        botaoMes.setAttribute("aria-expanded", "false");
+    }
+    if (botaoData) {
+        botaoData.setAttribute("aria-expanded", "false");
+    }
 }
 
 
@@ -383,14 +572,6 @@ if (formulario) {
         // Atualiza o mês automaticamente
         mesSelecionado = data.substring(0, 7);
 
-        const campoMes =
-            document.getElementById("mesSelecionado");
-
-        if (campoMes) {
-            campoMes.value = mesSelecionado;
-        }
-
-
         // Atualiza a tela
         atualizarTela();
 
@@ -407,6 +588,7 @@ if (formulario) {
             campoData.value = dataAtual();
         }
 
+        atualizarControlesCalendario();
 
         // Volta para despesa
         selecionarTipo("despesa");
@@ -680,25 +862,6 @@ function obterLancamentosDoMes() {
 
 
 // ======================================================
-// ALTERAR MÊS
-// ======================================================
-
-function alterarMes() {
-
-    const campoMes =
-        document.getElementById("mesSelecionado");
-
-    if (!campoMes || !campoMes.value) {
-        return;
-    }
-
-    mesSelecionado = campoMes.value;
-
-    atualizarTela();
-}
-
-
-// ======================================================
 // MÊS ANTERIOR
 // ======================================================
 
@@ -720,14 +883,7 @@ function mesAnterior() {
             data.getMonth() + 1
         ).padStart(2, "0")}`;
 
-
-    const campoMes =
-        document.getElementById("mesSelecionado");
-
-    if (campoMes) {
-        campoMes.value = mesSelecionado;
-    }
-
+    atualizarControlesCalendario();
 
     atualizarTela();
 }
@@ -755,14 +911,7 @@ function proximoMes() {
             data.getMonth() + 1
         ).padStart(2, "0")}`;
 
-
-    const campoMes =
-        document.getElementById("mesSelecionado");
-
-    if (campoMes) {
-        campoMes.value = mesSelecionado;
-    }
-
+    atualizarControlesCalendario();
 
     atualizarTela();
 }

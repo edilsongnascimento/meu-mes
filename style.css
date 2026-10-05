@@ -9,15 +9,6 @@ body {
     background: #f3f4f6;
     color: #1f2937;
 }
-input[type="date"] {
-    position: relative;
-    z-index: 10;
-    pointer-events: auto;
-    /* Garante altura boa para toque no celular */
-    padding: 10px; 
-    font-size: 16px; /* Evita zoom automático irritante no iOS/Android */
-}
-
 .topo {
     background: #2563eb;
     color: white;
@@ -319,12 +310,13 @@ select {
 }
 
 .seletor-mes {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
     padding: 15px;
-    background: #2563e;
+    background: #f3f4f6;
     border-bottom: 1px solid #e5e7eb;
 }
 
@@ -339,10 +331,148 @@ select {
     cursor: pointer;
 }
 
-.seletor-mes input {
+.seletor-mes .mes-atual {
+    width: auto;
+    min-width: 170px;
     height: 42px;
-    padding: 0 10px;
+    padding: 0 14px;
     border: 1px solid #d1d5db;
     border-radius: 10px;
     font-size: 16px;
+    font-weight: 600;
+    text-transform: capitalize;
+    background: white;
+    color: #1f2937;
+    cursor: pointer;
+}
+
+.seletor-mes-calendario,
+.calendario-data {
+    position: absolute;
+    z-index: 20;
+    width: min(320px, calc(100vw - 30px));
+    padding: 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 8px 24px rgba(31, 41, 55, 0.18);
+}
+
+.seletor-mes-calendario {
+    top: calc(100% - 5px);
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.calendario-cabecalho {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.calendario-cabecalho strong {
+    text-align: center;
+    text-transform: capitalize;
+}
+
+.calendario-cabecalho button {
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 8px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    cursor: pointer;
+}
+
+.opcoes-mes {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+}
+
+.opcoes-mes button,
+.dias-calendario button {
+    min-height: 40px;
+    border: 0;
+    border-radius: 8px;
+    background: #f3f4f6;
+    color: #1f2937;
+    cursor: pointer;
+}
+
+.opcoes-mes button {
+    padding: 6px 3px;
+    font-size: 13px;
+    text-transform: capitalize;
+}
+
+.opcoes-mes button.selecionado,
+.dias-calendario button.selecionado {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+.seletor-data {
+    position: relative;
+}
+
+.data-visivel {
+    width: 100%;
+    padding: 13px;
+    border: 1px solid #d1d5db;
+    border-radius: 9px;
+    background: #ffffff;
+    color: #1f2937;
+    font-size: 16px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.calendario-data {
+    top: calc(100% + 6px);
+    left: 0;
+}
+
+.dias-semana,
+.dias-calendario {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+    text-align: center;
+}
+
+.dias-semana {
+    margin-bottom: 6px;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.dias-semana span {
+    padding: 5px 0;
+}
+
+.dias-calendario button {
+    min-width: 0;
+    min-height: 36px;
+}
+
+.dias-calendario button.hoje {
+    outline: 2px solid #16a34a;
+    outline-offset: -2px;
+}
+
+.seletor-mes button:focus-visible,
+.seletor-mes-calendario button:focus-visible,
+.data-visivel:focus-visible,
+.calendario-data button:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.4);
+    outline-offset: 2px;
+}
+
+[hidden] {
+    display: none !important;
 }

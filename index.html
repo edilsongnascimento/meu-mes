@@ -52,26 +52,46 @@
 
         <button
             type="button"
-            onclick="mesAnterior()">
+            onclick="mesAnterior()"
+            aria-label="Mês anterior">
 
             ◀
 
         </button>
 
-
-        <input
-            type="month"
+        <button
+            type="button"
             id="mesSelecionado"
-            onchange="alterarMes()">
+            class="mes-atual"
+            aria-haspopup="dialog"
+            aria-expanded="false"
+            aria-controls="seletorMesCalendario"
+            onclick="alternarSeletorMes()">
+        </button>
 
 
         <button
             type="button"
-            onclick="proximoMes()">
+            onclick="proximoMes()"
+            aria-label="Próximo mês">
 
             ▶
 
         </button>
+
+        <section
+            id="seletorMesCalendario"
+            class="seletor-mes-calendario"
+            role="dialog"
+            aria-label="Escolher mês"
+            hidden>
+            <div class="calendario-cabecalho">
+                <button type="button" id="anoAnterior" aria-label="Ano anterior">◀</button>
+                <strong id="anoCalendario"></strong>
+                <button type="button" id="anoProximo" aria-label="Próximo ano">▶</button>
+            </div>
+            <div id="opcoesMes" class="opcoes-mes"></div>
+        </section>
 
     </div>
 
@@ -272,18 +292,46 @@
 
            <!-- DATA -->
 
-<label for="data">
+           <label for="dataVisivel">
     Data
 </label>
 
 <input
-    type="date"
+               type="hidden"
     id="data"
     name="data"
-    required
->
+           >
 
-<!-- BOTÃO SALVAR -->
+           <div class="seletor-data">
+               <button
+                   type="button"
+                   id="dataVisivel"
+                   class="data-visivel"
+                   aria-haspopup="dialog"
+                   aria-expanded="false"
+                   aria-controls="calendarioData"
+                   onclick="alternarCalendarioData()">
+               </button>
+               <section
+                   id="calendarioData"
+                   class="calendario-data"
+                   role="dialog"
+                   aria-label="Escolher data"
+                   hidden>
+                   <div class="calendario-cabecalho">
+                       <button type="button" id="diaMesAnterior" aria-label="Mês anterior">◀</button>
+                       <strong id="tituloCalendarioData"></strong>
+                       <button type="button" id="diaMesProximo" aria-label="Próximo mês">▶</button>
+                   </div>
+                   <div class="dias-semana" aria-hidden="true">
+                       <span>seg</span><span>ter</span><span>qua</span><span>qui</span>
+                       <span>sex</span><span>sáb</span><span>dom</span>
+                   </div>
+                   <div id="diasCalendario" class="dias-calendario"></div>
+               </section>
+           </div>
+
+           <!-- BOTÃO SALVAR -->
 
 <button
     type="submit"
@@ -292,13 +340,6 @@
     + Salvar lançamento
 
 </button>
-
-<script>
-    // Preenche automaticamente com a data de hoje
-    document.getElementById("data").value =
-        new Date().toISOString().split("T")[0];
-</script>     
-
 
             </form>
 
