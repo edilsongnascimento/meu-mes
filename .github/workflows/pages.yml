@@ -22,6 +22,9 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
+      - name: Baixar arquivos do repositório
+        uses: actions/checkout@v4
+
       - name: Preparar arquivos estáticos
         run: |
           mkdir _site
