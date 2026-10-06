@@ -331,6 +331,28 @@
                </section>
            </div>
 
+           <div class="repeticao-lancamento">
+               <label class="repeticao-opcao" for="repetirLancamento">
+                   <input
+                       type="checkbox"
+                       id="repetirLancamento">
+                   Repetir nos próximos meses
+               </label>
+
+               <div id="campoMesesRepeticao" class="campo-meses-repeticao" hidden>
+                   <label for="mesesRepeticao">
+                       Quantidade de meses adicionais (máximo 60)
+                   </label>
+                   <input
+                       type="number"
+                       id="mesesRepeticao"
+                       min="1"
+                       max="60"
+                       step="1"
+                       value="1">
+               </div>
+           </div>
+
            <!-- BOTÃO SALVAR -->
 
 <button
@@ -374,26 +396,25 @@
 
     <footer class="rodape-uso">
         <div class="rodape-conteudo">
-            <section class="backup" aria-labelledby="tituloBackup">
-                <h2 id="tituloBackup">Backup dos dados</h2>
-                <p>
-                    Salve uma cópia fora do navegador para proteger seus lançamentos.
-                </p>
-                <div class="backup-acoes">
-                    <button type="button" id="btnCriarBackup">
-                        Criar/vincular arquivo JSON
-                    </button>
-                    <button type="button" id="btnRestaurarBackup">
-                        Restaurar arquivo JSON
-                    </button>
-                    <button type="button" id="btnReconectarBackup" hidden>
-                        Permitir acesso ao arquivo
-                    </button>
+            <details class="backup">
+                <summary id="tituloBackup">Backup dos dados</summary>
+                <div class="backup-conteudo">
+                    <div class="backup-acoes">
+                        <button type="button" id="btnCriarBackup">
+                            Backup
+                        </button>
+                        <button type="button" id="btnRestaurarBackup">
+                            Restaurar backup
+                        </button>
+                        <button type="button" id="btnReconectarBackup" hidden>
+                            Permitir acesso ao arquivo
+                        </button>
+                    </div>
+                    <p id="statusBackup" class="status-backup" role="status" aria-live="polite">
+                        Salvamento automático no dispositivo ativo.
+                    </p>
                 </div>
-                <p id="statusBackup" class="status-backup" role="status" aria-live="polite">
-                    Salvamento automático no dispositivo ativo.
-                </p>
-            </section>
+            </details>
 
             <p class="creditos-rodape">Desenvolvido por edilsondelima</p>
         </div>

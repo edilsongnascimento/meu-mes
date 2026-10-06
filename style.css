@@ -161,6 +161,31 @@ select {
     font-size: 16px;
 }
 
+.repeticao-lancamento {
+    margin-top: 16px;
+}
+
+.repeticao-opcao {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 0;
+    font-weight: normal;
+}
+
+.repeticao-opcao input {
+    width: auto;
+    margin: 0;
+}
+
+.campo-meses-repeticao {
+    margin-top: 8px;
+}
+
+.campo-meses-repeticao[hidden] {
+    display: none;
+}
+
 .salvar {
     width: 100%;
     margin-top: 20px;
@@ -229,20 +254,31 @@ select {
 }
 
 .backup {
-    padding: 18px;
-    border: 1px solid #dfe6ef;
-    border-radius: 14px;
-    background: #ffffff;
-    box-shadow: 0 3px 10px rgba(31, 41, 55, 0.06);
+    border-bottom: 1px solid #dbe3ee;
 }
 
-.backup h2 {
-    margin-bottom: 6px;
-    color: #1f2937;
-    font-size: 18px;
+.backup summary {
+    padding: 8px 2px;
+    color: #64748b;
+    cursor: pointer;
+    font-size: 13px;
+    list-style-position: inside;
 }
 
-.backup > p {
+.backup summary:hover {
+    color: #334155;
+}
+
+.backup summary:focus-visible {
+    outline: 2px solid rgba(37, 99, 235, 0.5);
+    outline-offset: 2px;
+}
+
+.backup-conteudo {
+    padding: 8px 2px 12px;
+}
+
+.backup-conteudo > p {
     color: #6b7280;
     line-height: 1.5;
 }

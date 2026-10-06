@@ -509,6 +509,16 @@ function selecionarTipo(tipo) {
 const formulario = document.getElementById("formLancamento");
 
 if (formulario) {
+    const campoRepeticao = document.getElementById("repetirLancamento");
+    const campoMesesRepeticao = document.getElementById("campoMesesRepeticao");
+    const mesesRepeticao = document.getElementById("mesesRepeticao");
+
+    function atualizarCampoRepeticao() {
+        campoMesesRepeticao.hidden = !campoRepeticao.checked;
+        mesesRepeticao.required = campoRepeticao.checked;
+    }
+
+    campoRepeticao.addEventListener("change", atualizarCampoRepeticao);
 
     formulario.addEventListener("submit", function (evento) {
 
@@ -525,6 +535,9 @@ if (formulario) {
 
         const data =
             document.getElementById("data").value;
+        const quantidadeMeses = campoRepeticao.checked
+            ? Number(mesesRepeticao.value)
+            : 0;
 
 
         // Validação
@@ -543,26 +556,32 @@ if (formulario) {
             return;
         }
 
+        if (
+            campoRepeticao.checked &&
+            (!Number.isInteger(quantidadeMeses) ||
+                quantidadeMeses < 1 ||
+                quantidadeMeses > 60)
+        ) {
+            alert("Informe uma quantidade de meses entre 1 e 60.");
+            return;
+        }
 
-        // Novo lançamento
-        const novoLancamento = {
+        const novosLancamentos = [];
 
-            id: Date.now(),
+        for (let mesAdicional = 0; mesAdicional <= quantidadeMeses; mesAdicional += 1) {
+            novosLancamentos.push({
+                id: obterNovoIdLancamento(novosLancamentos),
+                tipo: tipoLancamento,
+                descricao: descricao,
+                valor: valor,
+                categoria: categoria,
+                data: mesAdicional === 0
+                    ? data
+                    : adicionarMesesAData(data, mesAdicional)
+            });
+        }
 
-            tipo: tipoLancamento,
-
-            descricao: descricao,
-
-            valor: valor,
-
-            categoria: categoria,
-
-            data: data
-        };
-
-
-        // Adiciona à lista
-        lancamentos.push(novoLancamento);
+        lancamentos.push(...novosLancamentos);
 
 
         // Salva
@@ -578,6 +597,7 @@ if (formulario) {
 
         // Limpa formulário
         formulario.reset();
+        atualizarCampoRepeticao();
 
 
         // Mantém a data atual
@@ -593,6 +613,34 @@ if (formulario) {
         // Volta para despesa
         selecionarTipo("despesa");
     });
+}
+
+function obterNovoIdLancamento(novosLancamentos) {
+    const idsExistentes = new Set(
+        lancamentos.concat(novosLancamentos).map(function (lancamento) {
+            return lancamento.id;
+        })
+    );
+    let id = Date.now();
+
+    while (idsExistentes.has(id)) {
+        id += 1;
+    }
+
+    return id;
+}
+
+function adicionarMesesAData(data, quantidadeMeses) {
+    const partes = data.split("-").map(Number);
+    const anoMes = new Date(partes[0], partes[1] - 1 + quantidadeMeses, 1);
+    const ultimoDia = new Date(
+        anoMes.getFullYear(),
+        anoMes.getMonth() + 1,
+        0
+    ).getDate();
+    const dia = Math.min(partes[2], ultimoDia);
+
+    return `${anoMes.getFullYear()}-${String(anoMes.getMonth() + 1).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
 }
 
 
@@ -838,7 +886,6 @@ function configurarBackup() {
     botaoReconectar.addEventListener("click", reconectarArquivoBackup);
 
     if (!("showSaveFilePicker" in window)) {
-        botaoCriar.textContent = "Baixar arquivo de backup JSON";
         atualizarStatusBackup(
             "Salvamento automático no dispositivo ativo. Neste navegador, backups em arquivo precisam ser baixados e restaurados manualmente."
         );

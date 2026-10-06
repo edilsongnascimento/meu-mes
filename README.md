@@ -2,6 +2,8 @@
 
 Aplicativo de controle de ganhos e despesas, instalável como PWA.
 
+Ao cadastrar um lançamento, marque **Repetir nos próximos meses** e informe de 1 a 60 meses adicionais. Cada ocorrência é salva como um lançamento independente e pode ser excluída separadamente. Se o dia escolhido não existir em algum mês, é usado o último dia daquele mês.
+
 ## Publicação
 
 O projeto pode ser hospedado gratuitamente no GitHub Pages. O workflow publica os arquivos estáticos a cada atualização da branch `main`. Na primeira publicação, abra **Settings > Pages** no GitHub e selecione **GitHub Actions** como origem de build/deploy, se ainda não estiver selecionada.
